@@ -8,7 +8,7 @@
     "password": "ch7xtBP1fvZMMxdPNtV15A7HKTuBmY3U",
     "database": "rmdhkrhk",
     "synchronize": true,
-    "logging": true,
+    "logging": false,
     "entities": ["src/database/entity/**/*.ts"],
     "migrations": ["src/database/migration/**/*.ts"],
     "subscribers": ["src/database/subscriber/**/*.ts"],

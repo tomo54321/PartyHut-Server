@@ -54,8 +54,12 @@ export let socketServer: Server<DefaultEventsMap, DefaultEventsMap>;
                     throw BreakException;
                 }
             });
-            // Assume all is good and use isn't connected.
+            // Assume all is good and user isn't connected elsewhere.
             if(!wasFound){
+
+                // Join a private room of the sockets profile id.
+                socket.join(socket.data.profile.id);
+
                 next();
             } else {
                 socket.disconnect();
