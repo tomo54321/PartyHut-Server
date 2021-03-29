@@ -1,9 +1,11 @@
 import { Router } from 'express';
 import { body } from 'express-validator';
-import { CreateRoom } from '../controllers/room';
+import { CreateRoom, GetRooms } from '../controllers/room';
 import { isAuth } from '../middleware/isAuth';
 import { ValidateErrors } from '../middleware/validateErrors';
 export const RoomRouter = Router();
+
+RoomRouter.get("/", GetRooms);
 
 RoomRouter.post(
     "/",
