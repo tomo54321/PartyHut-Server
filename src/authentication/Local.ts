@@ -1,6 +1,6 @@
 import passport from "passport";
 import {Strategy} from 'passport-local';
-import { User } from "../models/User";
+import { User } from "../database/entity/User";
 import { compare } from 'bcrypt';
 
 export const InitLocalAuthStrategy = () => {

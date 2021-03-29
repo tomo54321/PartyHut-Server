@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { body } from 'express-validator';
 import { ValidateErrors } from '../middleware/validateErrors';
 import { LocalSignIn, SignUp } from '../controllers/auth';
-import { User } from '../models/User';
+import { User } from '../database/entity/User';
 import { isGuest } from '../middleware/isGuest';
 export const AuthRouter = Router();
 
@@ -27,7 +27,8 @@ AuthRouter.post(
                     } else {
                         reject(new Error("This username has already been taken."))
                     }
-                } catch {
+                } catch (e) {
+                    console.error(e);
                     reject(new Error("Failed to verify username status."))
                 }
             });
@@ -48,7 +49,8 @@ AuthRouter.post(
                     } else {
                         reject(new Error("You already have an account."))
                     }
-                } catch {
+                } catch (e) {
+                    console.error(e);
                     reject(new Error("Failed to verify email status."))
                 }
             })

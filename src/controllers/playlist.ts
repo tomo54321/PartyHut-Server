@@ -1,5 +1,6 @@
 import { Response, Request } from "express";
-import { ISong, Playlist } from "../models/Playlist";
+import { Playlist } from "../database/entity/Playlist";
+import { Song } from '../@types/Song';
 import { GetDataFromSoundCloud } from "../modules/SoundCloud";
 import { GetDataFromYouTube } from "../modules/YouTube";
 
@@ -33,9 +34,11 @@ export const GetPlaylist = async (req: Request, res: Response) => {
 
     try{
         const playlist = await Playlist.findOne({
-            _id: req.params.playlistId,
-            owner: req.user!
-        }).populate("owner");
+            where: {
+                id: req.params.playlistId,
+                owner: req.user!
+            }
+        });
         if(!playlist){
             return res.status(404).send({
                 errors: [{
@@ -45,17 +48,18 @@ export const GetPlaylist = async (req: Request, res: Response) => {
             })
         }
 
+        const owner = await playlist.owner;
+
         return res.send({
             ok: true,
             playlist: {
                 id: playlist.id,
                 title: playlist.title,
                 user: {
-                    id: playlist.owner._id,
-                    username: playlist.owner.username
+                    id: owner.id,
+                    username: owner.username
                 },
                 songs: playlist.songs.map(song => ({
-                    id: song._id,
                     title: song.title,
                     postedBy: song.postedBy,
                     thumbnailUrl: song.thumbnailUrl,
@@ -79,7 +83,7 @@ export const GetPlaylist = async (req: Request, res: Response) => {
 export const CreatePlaylist = async (req: Request, res: Response) => {
 
     try{
-        const playlist = new Playlist({
+        const playlist = Playlist.create({
             title: req.body.title,
             owner: req.user!
         });
@@ -109,8 +113,10 @@ export const UpdatePlaylist = async (req: Request, res: Response) => {
 
     try{
         const playlist = await Playlist.findOne({
-            _id: req.params.playlistId,
-            owner: req.user!
+            where: {
+                id: req.params.playlistId,
+                owner: req.user!
+            }
         });
         if(!playlist){
             return res.status(404).send({
@@ -145,8 +151,10 @@ export const DeletePlaylist = async (req: Request, res: Response) => {
 
     try{
         const playlist = await Playlist.findOne({
-            _id: req.params.playlistId,
-            owner: req.user!
+            where: {
+                id: req.params.playlistId,
+                owner: req.user!
+            }
         });
         if(!playlist){
             return res.status(404).send({
@@ -183,8 +191,10 @@ export const AddSongToPlaylist = async (req: Request, res: Response) => {
 
     try{
         const playlist = await Playlist.findOne({
-            _id: req.params.playlistId,
-            owner: req.user!
+            where: {
+                id: req.params.playlistId,
+                owner: req.user!
+            }
         });
         if(!playlist){
             return res.status(404).send({
@@ -209,7 +219,7 @@ export const AddSongToPlaylist = async (req: Request, res: Response) => {
             platform: req.body.platform,
             thumbnailUrl: songData.thumbnailURL,
             platformId: req.body.songId
-        } as ISong);
+        } as Song);
 
         playlist.songs = songs;
         await playlist.save();
@@ -235,8 +245,10 @@ export const RemoveSongFromPlaylist = async (req: Request, res: Response) => {
 
     try{
         const playlist = await Playlist.findOne({
-            _id: req.params.playlistId,
-            owner: req.user!
+            where: {
+                id: req.params.playlistId,
+                owner: req.user!
+            }
         });
         if(!playlist){
             return res.status(404).send({
@@ -248,7 +260,7 @@ export const RemoveSongFromPlaylist = async (req: Request, res: Response) => {
         }
 
         const songs = playlist.songs;
-        const songIndex = songs.findIndex(song => song._id.toString() === req.params.songId);
+        const songIndex = songs.findIndex(song => song.platformId.toString() === req.params.songId);
         if(songIndex < 0){
             return res.status(404).send({
                 errors: [{
