@@ -1,4 +1,3 @@
-import { Song } from "../../@types/Song";
 import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { User } from "./User";
 import { Playlist } from "./Playlist";
@@ -27,7 +26,7 @@ export class Room extends BaseEntity {
     @Column("boolean", { default: false })
     is_playing: boolean;
 
-    @Column("tinytext", { nullable: true })
+    @Column("text", { nullable: true })
     current_playing_platform: "YouTube" | "SoundCloud" | null;
 
     @Column("timestamp", { default: null })

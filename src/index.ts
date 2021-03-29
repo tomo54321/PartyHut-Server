@@ -6,7 +6,7 @@ import { InitStrategies } from './authentication/Strategies';
 import passport from 'passport';
 import { PlaylistRouter } from './routes/playlist';
 import { ExternalRouter } from './routes/external';
-// import { RoomRouter } from './routes/room';
+import { RoomRouter } from './routes/room';
 import { SessionMiddleware } from './middleware/session';
 import { createConnection, getConnectionOptions } from 'typeorm';
 
@@ -49,7 +49,7 @@ import { createConnection, getConnectionOptions } from 'typeorm';
 
     app.use("/auth", AuthRouter);
     app.use("/playlist", PlaylistRouter);
-    // app.use("/room", RoomRouter);
+    app.use("/room", RoomRouter);
     app.use("/external", ExternalRouter);
 
     // Start the socket server

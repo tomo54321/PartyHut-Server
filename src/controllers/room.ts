@@ -1,14 +1,14 @@
 import { Response, Request } from "express";
-import { Room } from "../models/Room";
+import { Room } from "../database/entity/Room";
 
 export const CreateRoom = async (req: Request, res: Response) => {
 
     try{
 
-        const user_rooms = await Room.find({
+        const user_rooms_count = await Room.count({
             owner: req.user!
         });
-        if(user_rooms.length > 0){
+        if(user_rooms_count > 0){
             return res.status(403).send({
                 errors: [{
                     param: "roomLimit",
@@ -17,7 +17,7 @@ export const CreateRoom = async (req: Request, res: Response) => {
             })
         }
 
-        const room = new Room({
+        const room = Room.create({
             name: req.body.name,
             owner: req.user!
         });
