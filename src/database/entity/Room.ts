@@ -10,7 +10,7 @@ export class Room extends BaseEntity {
      * Essential Room Stuff
      */
     @PrimaryGeneratedColumn("uuid")
-    id: number;
+    id: string;
 
     @Column("text")
     name: string;
@@ -28,9 +28,12 @@ export class Room extends BaseEntity {
 
     @Column("text", { nullable: true })
     current_playing_platform: "YouTube" | "SoundCloud" | null;
+    
+    @Column("text", { nullable: true })
+    current_playing_platform_id: string | null;
 
     @Column("timestamp", { default: null })
-    current_song_started_at: number | null;
+    current_song_started_at: Date | null;
 
     @OneToOne(() => User, { nullable: true, eager: true })
     @JoinColumn()
@@ -57,9 +60,9 @@ export class Room extends BaseEntity {
      * Generic Room Stuff
      */
     @Column("timestamp", { default: () => "CURRENT_TIMESTAMP" })
-    createdAt: number;
+    createdAt: Date;
 
     @Column("timestamp", { default: () => "CURRENT_TIMESTAMP", onUpdate: "CURRENT_TIMESTAMP" })
-    updatedAt: number;
+    updatedAt: Date;
 
 }

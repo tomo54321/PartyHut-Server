@@ -1,8 +1,6 @@
 require("dotenv").config();
 import { Server } from 'socket.io';
 import { createServer } from 'http';
-import mongoose from 'mongoose';
-import LoadModels from '../models/LoadModels';
 import { onSocketConnected } from './controllers/core';
 import { SessionMiddleware } from '../middleware/session';
 import { isAuth } from './middleware/authentication';
@@ -24,21 +22,6 @@ export let socketServer: Server<DefaultEventsMap, DefaultEventsMap>;
 
     socketServer = io;
 
-    // Connect to MongoDB
-    try {
-        await mongoose.connect(process.env.MONGO_URL!, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true
-        });
-        console.log("Connected to MongoDB!");
-    } catch (e) {
-        console.error("FAILED TO CONNECT TO MONGODB");
-        console.error(e);
-        process.exit();
-    }
-    // Load the mongoose models
-    const _ = LoadModels;
-    console.log(`Loaded ${Object.keys(_).length} models!`);
 
     // Setup socketio to use express session
     io.use((socket, next) => {
@@ -66,7 +49,7 @@ export let socketServer: Server<DefaultEventsMap, DefaultEventsMap>;
         let wasFound = false;
         try{
             allSockets.forEach(client => {
-                if(client.data.profile._id.toString() === socket.data.profile._id.toString()){
+                if(client.data.profile.id === socket.data.profile.id){
                     wasFound = true;
                     throw BreakException;
                 }

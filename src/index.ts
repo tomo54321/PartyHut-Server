@@ -53,7 +53,7 @@ import { createConnection, getConnectionOptions } from 'typeorm';
     app.use("/external", ExternalRouter);
 
     // Start the socket server
-    // require("./socket-server/index");
+    require("./socket-server/index");
 
     // Listen
     const PORT = process.env.EXPRESS_PORT || 4000;

@@ -6,7 +6,7 @@ import { User } from "./User";
 export class Playlist extends BaseEntity {
 
     @PrimaryGeneratedColumn("uuid")
-    id: number;
+    id: string;
 
     @Column("text")
     title: string;
@@ -20,9 +20,9 @@ export class Playlist extends BaseEntity {
 
 
     @Column("timestamp", { default: () => "CURRENT_TIMESTAMP" })
-    createdAt: number;
+    createdAt: Date;
 
     @Column("timestamp", { default: () => "CURRENT_TIMESTAMP", onUpdate: "CURRENT_TIMESTAMP" })
-    updatedAt: number;
+    updatedAt: Date;
 
 }

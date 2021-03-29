@@ -6,7 +6,7 @@ import { Room } from "./Room";
 export class User extends BaseEntity {
 
     @PrimaryGeneratedColumn("uuid")
-    id: number;
+    id: string;
 
     @Column("text", {
         unique: true
@@ -28,8 +28,8 @@ export class User extends BaseEntity {
     rooms: Room[];
 
     @Column("timestamp", { default: () => "CURRENT_TIMESTAMP" })
-    createdAt: number;
+    createdAt: Date;
 
     @Column("timestamp", { default: () => "CURRENT_TIMESTAMP", onUpdate: "CURRENT_TIMESTAMP" })
-    updatedAt: number;
+    updatedAt: Date;
 }
