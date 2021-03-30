@@ -17,11 +17,14 @@ export const roomHandlers = (socket: Socket<DefaultEventsMap, DefaultEventsMap>)
         try {
             const room = await Room.findOne(id);
             if (!room) {
-                return sendCriticalError(socket, "Room doesn't exist", "roomId");
+                sendCriticalError(socket, "Room doesn't exist.", "server");
+                return socket.disconnect();
             }
             return await onSocketJoinRoom(socket, room);
         } catch (e) {
-            return sendCriticalError(socket, "Failed to find room", "server");
+            console.error(e);
+            sendCriticalError(socket, "Failed to find room", "server");
+            return socket.disconnect();
         }
 
     });
@@ -77,11 +80,11 @@ export const roomHandlers = (socket: Socket<DefaultEventsMap, DefaultEventsMap>)
                 return handleRoomDoesntExist(socket.data.currentRoom);
             }
             const user = socket.data.profile;
-            
-            if(isSocketDJ(room, user) && room.is_playing){
+
+            if (isSocketDJ(room, user) && room.is_playing) {
 
                 // Song has been going longer than 10 seconds?
-                if(room.current_song_started_at!.getTime() < (Date.now() - 10000)){
+                if (room.current_song_started_at!.getTime() < (Date.now() - 10000)) {
                     return onSocketSkipSong(room);
                 } else {
                     return sendError(socket, "Hold up! You need to wait before skipping this song.");
@@ -95,6 +98,30 @@ export const roomHandlers = (socket: Socket<DefaultEventsMap, DefaultEventsMap>)
             console.error(e);
             return sendError(socket, "Failed to join the queue");
         }
+    });
+
+    /**
+     * Basic chat messages
+     */
+    socket.on("send chat message", ({ message }: { message: string }) => {
+        if (socket.data.currentRoom === undefined) { // User isn't in a room (how are they even connected?)
+            socket.disconnect();
+            return;
+        }
+
+        // Sending a message within a 1 second window (possible spam!)
+        if (socket.data.lastChatMessage !== undefined && socket.data.lastChatMessage > (Date.now() - 1000)) {
+            return;
+        }
+        // Store last message sent.
+        socket.data.lastChatMessage = Date.now();
+
+        socket.to(socket.data.currentRoom).emit("receive chat message", {
+            id: Math.round(Math.random() * 9999) + Date.now(),
+            username: socket.data.profile.username,
+            message
+        });
+
     });
 
 
@@ -207,7 +234,7 @@ const onSocketJoinDJQueue = async (
     });
 
     // If this is the only user in the queue.
-    if(room.is_playing === false){
+    if (room.is_playing === false) {
         return switchToNextDJ(room);
     }
 
@@ -223,7 +250,7 @@ const onSocketSkipSong = async (
 ) => {
 
     const playlist = room.current_playlist!;
-    if(room.current_song_index === (playlist.songs.length - 1)){
+    if (room.current_song_index === (playlist.songs.length - 1)) {
         console.log("Going to next DJ");
         return switchToNextDJ(room);
     }
@@ -274,8 +301,12 @@ const switchToNextDJ = async (
     room.current_dj_queue.splice(0, 1);
     await room.save();
 
-    socketServer.to(room.current_dj!.id).emit("no longer dj"); // Tell old DJ they're not IT anymore 
-    socketServer.to(nextDj!.id).emit("became dj"); // Tell new DJ they're IT!
+    if (room.current_dj) {
+        socketServer.to(room.current_dj.id).emit("no longer dj"); // Tell old DJ they're not IT anymore 
+    }
+    if (nextDj) {
+        socketServer.to(nextDj.id).emit("became dj"); // Tell new DJ they're IT!
+    }
 
     // TODO: Implement preventing of deleting of playlists when in a queue!
 

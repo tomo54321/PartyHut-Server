@@ -1,12 +1,27 @@
 import { Response, Request } from "express";
-import { User } from "src/database/entity/User";
+import { User } from "../database/entity/User";
 import { Room } from "../database/entity/Room";
+
+interface HomeRoom {
+    id: string;
+    name: string;
+    thumbnail: string;
+    host: {
+        username: string;
+    }
+}
+interface LayoutResponse {
+    title: string;
+    rooms: HomeRoom[];
+}
 
 export const GetRooms = async (req: Request, res: Response) => {
 
     try{
-        let homeResponse = [];
+        
+        let homeResponse: LayoutResponse[] = [];
 
+        // If the user is logged in we'll send those rooms too.
         if(req.user){
             const myRooms = await Room.find({
                 where: {
@@ -19,6 +34,7 @@ export const GetRooms = async (req: Request, res: Response) => {
                     rooms: myRooms.map(room => ({
                         id: room.id,
                         name: room.name,
+                        thumbnail: getCurrentPlayingThumbnail(room),
                         host: {
                             username: (req.user! as User).username
                         }
@@ -27,7 +43,7 @@ export const GetRooms = async (req: Request, res: Response) => {
             }
         }
 
-
+        // Find new rooms
         const newRooms = await Room.find({
             relations: ["owner"],
             take: 12,
@@ -40,12 +56,14 @@ export const GetRooms = async (req: Request, res: Response) => {
             rooms: newRooms.map(room => ({
                 id: room.id,
                 name: room.name,
+                thumbnail: getCurrentPlayingThumbnail(room),
                 host: {
                     username: (room.owner as any).username
                 }
             }))
         });
 
+        // Find recently updated rooms
         const recentlyUpdated = await Room.find({
             relations: ["owner"],
             take: 12,
@@ -58,12 +76,14 @@ export const GetRooms = async (req: Request, res: Response) => {
             rooms: recentlyUpdated.map(room => ({
                 id: room.id,
                 name: room.name,
+                thumbnail: getCurrentPlayingThumbnail(room),
                 host: {
                     username: (room.owner as any).username
                 }
             }))
         });
 
+        // Send the layout to the client
         return res.send({
             ok: true,
             layout: homeResponse
@@ -121,3 +141,19 @@ export const CreateRoom = async (req: Request, res: Response) => {
     }
     
 };
+
+
+const getCurrentPlayingThumbnail = (room: Room): string => {
+    if(!room.is_playing){
+        return "";
+    }
+
+    switch(room.current_playing_platform){
+        case "SoundCloud":
+            return "";
+        case "YouTube":
+            return `https://i.ytimg.com/vi/${room.current_playing_platform_id}/hqdefault.jpg`;
+        default:
+            return"";
+    }
+}
