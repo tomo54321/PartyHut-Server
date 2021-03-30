@@ -164,6 +164,7 @@ const onSocketJoinRoom = async (
             id: owner.id,
             username: owner.username
         },
+        users: usersInRoom,
         on_deck: {
             playing: room.is_playing,
             platform: room.current_playing_platform,

@@ -45,42 +45,45 @@ export const GetRooms = async (req: Request, res: Response) => {
 
         // Find new rooms
         const newRooms = await Room.find({
-            relations: ["owner"],
             take: 12,
             order: {
                 createdAt: "DESC"
-            }
+            },
+            relations: ["owner"],
         });
+        const recentRooms = await Promise.all( newRooms.map(async room => ({
+            id: room.id,
+            name: room.name,
+            thumbnail: getCurrentPlayingThumbnail(room),
+            host: {
+                username: (await room.owner).username
+            }
+        })) );
         homeResponse.push({
             title: "New Rooms",
-            rooms: newRooms.map(room => ({
-                id: room.id,
-                name: room.name,
-                thumbnail: getCurrentPlayingThumbnail(room),
-                host: {
-                    username: (room.owner as any).username
-                }
-            }))
+            rooms: recentRooms
         });
 
         // Find recently updated rooms
         const recentlyUpdated = await Room.find({
-            relations: ["owner"],
             take: 12,
             order: {
                 updatedAt: "DESC"
-            }
+            },
+            relations: ["owner"],
         });
+        const activeRooms = await Promise.all( recentlyUpdated.map(async room => ({
+            id: room.id,
+            name: room.name,
+            thumbnail: getCurrentPlayingThumbnail(room),
+            host: {
+                username: (await room.owner).username
+            }
+        })) );
+        
         homeResponse.push({
             title: "Active Rooms",
-            rooms: recentlyUpdated.map(room => ({
-                id: room.id,
-                name: room.name,
-                thumbnail: getCurrentPlayingThumbnail(room),
-                host: {
-                    username: (room.owner as any).username
-                }
-            }))
+            rooms: activeRooms
         });
 
         // Send the layout to the client
