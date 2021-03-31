@@ -30,7 +30,7 @@ export const GetRooms = async (req: Request, res: Response) => {
             });
             if(myRooms.length > 0){
                 homeResponse.push({
-                    title: "My Rooms",
+                    title: "My Huts",
                     rooms: myRooms.map(room => ({
                         id: room.id,
                         name: room.name,
@@ -60,7 +60,7 @@ export const GetRooms = async (req: Request, res: Response) => {
             }
         })) );
         homeResponse.push({
-            title: "New Rooms",
+            title: "New Huts",
             rooms: recentRooms
         });
 
@@ -82,7 +82,7 @@ export const GetRooms = async (req: Request, res: Response) => {
         })) );
         
         homeResponse.push({
-            title: "Active Rooms",
+            title: "Active Huts",
             rooms: activeRooms
         });
 

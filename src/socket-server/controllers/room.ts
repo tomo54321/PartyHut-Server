@@ -164,7 +164,7 @@ const onSocketJoinRoom = async (
             id: owner.id,
             username: owner.username
         },
-        users: usersInRoom,
+        users: getUsersInRoom(room.id),
         on_deck: {
             playing: room.is_playing,
             platform: room.current_playing_platform,
@@ -207,6 +207,11 @@ const onSocketLeaveRoom = async (
         const isInQueue = isSocketInDJQueue(room, user);
         // Check if the user is a dj
         const isDJ = isSocketDJ(room, user);
+
+        // Let other users know someone left!
+        socket.to(room.id).emit("user leave", {
+            id: socket.data.profile.id
+        });
 
         // If the user was in the queue
         if (isInQueue) {
@@ -407,4 +412,20 @@ const updateRoomDeckState = (
 
         resolve(true);
     });
+}
+
+const getUsersInRoom = (
+    roomId: string
+): { id: string, username:string }[] => {
+    const usersInRoom = [];
+    const clients = socketServer.sockets.adapter.rooms.get(roomId);
+    for( const clientId of clients! ){
+        const clientSocket = socketServer.sockets.sockets.get(clientId);
+        usersInRoom.push({
+            id: clientSocket?.data.profile.id,
+            username: clientSocket?.data.profile.username
+        })
+    }
+
+    return usersInRoom;
 }
