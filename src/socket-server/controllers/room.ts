@@ -406,8 +406,8 @@ const updateRoomDeckState = (
             playing: deckState.playing,
             platform: deckState.platform,
             platformId: deckState.platformId,
-            songStartedAt: deckState.songStartedAt?.getTime() || null,
-            current_dj: deckState.current_dj?.id || null
+            songStartedAt: room.current_song_started_at?.getTime() || null,
+            current_dj: room.current_dj?.id || null
         });
 
         resolve(true);
