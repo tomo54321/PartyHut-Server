@@ -1,20 +1,18 @@
 import { hash } from "bcrypt";
 import { Request, Response } from "express";
 import passport from "passport";
-import { User } from "../models/User";
+import { User } from "../database/entity/User";
 
 export const SignUp = async (req: Request, res: Response) => {
 
     try {
         const password = await hash(req.body.password, 12);
 
-        const user = new User({
+        await User.insert({
             username: req.body.username,
             email: req.body.email,
             password
         });
-
-        await user.save();
 
         return res.send({ ok: true });
 

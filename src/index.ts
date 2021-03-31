@@ -1,8 +1,6 @@
 require("dotenv").config();
 import express from 'express';
 import cors from 'cors';
-import mongoose from 'mongoose';
-import LoadModels from './models/LoadModels';
 import { AuthRouter } from './routes/auth';
 import { InitStrategies } from './authentication/Strategies';
 import passport from 'passport';
@@ -10,6 +8,7 @@ import { PlaylistRouter } from './routes/playlist';
 import { ExternalRouter } from './routes/external';
 import { RoomRouter } from './routes/room';
 import { SessionMiddleware } from './middleware/session';
+import { createConnection, getConnectionOptions } from 'typeorm';
 
 
 (async () => {
@@ -27,25 +26,15 @@ import { SessionMiddleware } from './middleware/session';
     }));
 
 
-    // Mongoose Connection
-    try{
-        await mongoose.connect(process.env.MONGO_URL!, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true
-        });
-        console.log("Connected to MongoDB!");
-    } catch (e) {
-        console.error("FAILED TO CONNECT TO MONGODB");
-        console.error(e);
-        process.exit();
-    }
+    // Connect to postgres
+    const dbOptions = await getConnectionOptions(
+        process.env.NODE_ENV || "development"
+    );
+    await createConnection({ ...dbOptions, name: "default" });
 
     // Load available authentication strategies
     InitStrategies();
 
-    // Load the mongoose models
-    const _ = LoadModels;
-    console.log(`Loaded ${Object.keys(_).length} models!`);
 
     app.get("/app", (req, res) => {
         return res.send({
