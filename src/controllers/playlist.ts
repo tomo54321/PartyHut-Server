@@ -16,6 +16,7 @@ export const ListPlaylists = async (req: Request, res: Response) => {
             playlists: playlists.map(playlist => ({
                 id: playlist.id,
                 title: playlist.title,
+                thumbnail: playlist.songs[0].thumbnailUrl,
                 totalSongs: playlist.songs.length
             }))
         })
