@@ -64,16 +64,7 @@ AuthRouter.post(
             minUppercase: 1,
             minNumbers: 1
         })
-        .withMessage("Your password must contain 1 uppercase, 1 lowercase and a number. It must also be at least 8 characters long.")
-        .custom((input: string, {req}) => {
-            return new Promise((resolve, reject) => {
-                if(input === req.body.confirm_password){
-                    resolve(true);
-                } else {
-                    reject(new Error("Your passwords don't match."))
-                }
-            });
-        }),
+        .withMessage("Your password must contain 1 uppercase, 1 lowercase and a number. It must also be at least 8 characters long."),
     ValidateErrors,
     SignUp
 );

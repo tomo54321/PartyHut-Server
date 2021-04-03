@@ -17,6 +17,7 @@ export const SignUp = async (req: Request, res: Response) => {
         return res.send({ ok: true });
 
     } catch (e) {
+        console.log(e);
         return res.status(500).send({
             errors: [
                 {

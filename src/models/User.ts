@@ -10,10 +10,10 @@ export class User {
     @prop()
     public password: string;
 
-    @prop({ default: () => "CURRENT_TIMESTAMP" })
+    @prop({ default: Date.now() })
     public created_at: Date;
 
-    @prop({ default: () => "CURRENT_TIMESTAMP" })
+    @prop({ default: Date.now() })
     public updated_at: Date;
 }
 
