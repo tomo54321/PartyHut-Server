@@ -8,7 +8,7 @@ import { PlaylistRouter } from './routes/playlist';
 import { ExternalRouter } from './routes/external';
 import { RoomRouter } from './routes/room';
 import { SessionMiddleware } from './middleware/session';
-import { createConnection, getConnectionOptions } from 'typeorm';
+import { mongoose } from '@typegoose/typegoose';
 
 
 (async () => {
@@ -26,11 +26,12 @@ import { createConnection, getConnectionOptions } from 'typeorm';
     }));
 
 
-    // Connect to postgres
-    const dbOptions = await getConnectionOptions(
-        process.env.NODE_ENV || "development"
-    );
-    await createConnection({ ...dbOptions, name: "default" });
+    // Connect to MongoDB
+    await mongoose.connect(process.env.MONGO_URL!, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true
+    });
+    console.log("Connected to MongoDB!");
 
     // Load available authentication strategies
     InitStrategies();
@@ -53,7 +54,7 @@ import { createConnection, getConnectionOptions } from 'typeorm';
     app.use("/external", ExternalRouter);
 
     // Start the socket server
-    require("./socket-server/index");
+    // require("./socket-server/index");
 
     // Listen
     const PORT = process.env.EXPRESS_PORT || 4000;

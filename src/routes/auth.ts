@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { body } from 'express-validator';
 import { ValidateErrors } from '../middleware/validateErrors';
 import { LocalSignIn, SignUp } from '../controllers/auth';
-import { User } from '../database/entity/User';
+import { UserModel } from '../models/User';
 import { isGuest } from '../middleware/isGuest';
 export const AuthRouter = Router();
 
@@ -21,7 +21,7 @@ AuthRouter.post(
         .custom((input: string) => {
             return new Promise(async (resolve, reject) => {
                 try{
-                    const user = await User.findOne({ username: input });
+                    const user = await UserModel.findOne({ username: input });
                     if(!user){
                         resolve(true);
                     } else {
@@ -43,7 +43,7 @@ AuthRouter.post(
         .custom((input: string) => {
             return new Promise(async (resolve, reject) => {
                 try{
-                    const user = await User.findOne({ email: input });
+                    const user = await UserModel.findOne({ email: input });
                     if(!user){
                         resolve(true);
                     } else {

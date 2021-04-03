@@ -1,31 +1,7 @@
-import { getModelForClass, prop, Ref } from "@typegoose/typegoose";
+import { getModelForClass, modelOptions, prop, Ref, Severity } from "@typegoose/typegoose";
 import { Playlist } from "./Playlist";
 import { PlaylistSong } from "./PlaylistSong";
 import { User } from "./User";
-
-export class Room {
-
-    @prop({ required: true })
-    public name: string;
-
-    @prop({ required: true })
-    public owner: Ref<User>;
-
-    @prop({ required: true })
-    public on_deck: Ref<RoomOnDeck>;
-
-    @prop()
-    public dj_queue: Ref<DjQueue>[];
-
-    @prop({ default: () => "CURRENT_TIMESTAMP" })
-    public created_at: Date;
-
-    @prop({ default: () => "CURRENT_TIMESTAMP" })
-    public updated_at: Date;
-
-}
-
-export const RoomModel = getModelForClass(Room);
 
 class RoomOnDeck {
     
@@ -54,3 +30,28 @@ class DjQueue {
     public playlist: Playlist;
 
 }
+
+@modelOptions({ options: { allowMixed: Severity.ERROR } })
+export class Room {
+
+    @prop({ required: true })
+    public name: string;
+
+    @prop({ required: true, ref: "User" })
+    public owner: Ref<User>;
+
+    @prop({ required: true, type: () => RoomOnDeck })
+    public on_deck: RoomOnDeck;
+
+    @prop({ type: () => DjQueue })
+    public dj_queue: DjQueue[];
+
+    @prop({ default: () => "CURRENT_TIMESTAMP" })
+    public created_at: Date;
+
+    @prop({ default: () => "CURRENT_TIMESTAMP" })
+    public updated_at: Date;
+
+}
+
+export const RoomModel = getModelForClass(Room);

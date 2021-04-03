@@ -1,5 +1,6 @@
 export interface APISong {
     title: string;
-    postedBy: string;
-    thumbnailURL: string;
+    artist: string;
+    artwork: string;
+    duration: number;
 }

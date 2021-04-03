@@ -1,5 +1,5 @@
 import passport from "passport";
-import { User } from "../database/entity/User";
+import { UserModel } from "../models/User";
 import { InitLocalAuthStrategy } from "./Local";
 
 export const InitStrategies = () => {
@@ -11,7 +11,7 @@ export const InitStrategies = () => {
 
     passport.deserializeUser(async (id, done) => {
         try{
-            const user = await User.findOne({
+            const user = await UserModel.findOne({
                 where: {
                     id: id
                 }

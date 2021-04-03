@@ -1,6 +1,6 @@
 import passport from "passport";
 import {Strategy} from 'passport-local';
-import { User } from "../database/entity/User";
+import { UserModel } from "../models/User";
 import { compare } from 'bcrypt';
 
 export const InitLocalAuthStrategy = () => {
@@ -15,7 +15,7 @@ const GetStrategy = (): Strategy => {
         },
         async (email, password, done) => {
         try{
-            const user = await User.findOne({ email });
+            const user = await UserModel.findOne({ email });
             if(!user){
                 return done(null, false, { message: 'Invalid email or password.' });
             }

@@ -1,14 +1,14 @@
 import { hash } from "bcrypt";
 import { Request, Response } from "express";
 import passport from "passport";
-import { User } from "../database/entity/User";
+import { UserModel } from "../models/User";
 
 export const SignUp = async (req: Request, res: Response) => {
 
     try {
         const password = await hash(req.body.password, 12);
 
-        await User.insert({
+        await UserModel.create({
             username: req.body.username,
             email: req.body.email,
             password

@@ -17,4 +17,4 @@ export class User {
     public updated_at: Date;
 }
 
-export const UserModal = getModelForClass(User);
+export const UserModel = getModelForClass(User);

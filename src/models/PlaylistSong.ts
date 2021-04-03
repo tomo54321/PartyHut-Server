@@ -11,7 +11,7 @@ export class PlaylistSong {
     @prop({ enum: ["YouTube", "SoundCloud"], default: "YouTube" })
     public platform: "YouTube" | "SoundCloud";
 
-    @prop({ required: true})
+    @prop({ required: true })
     public platform_id: string;
 
     @prop()

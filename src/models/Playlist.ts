@@ -1,17 +1,18 @@
-import { getModelForClass, prop, Ref } from "@typegoose/typegoose";
+import { getModelForClass, modelOptions, prop, Ref, Severity } from "@typegoose/typegoose";
 import { PlaylistSong } from "./PlaylistSong";
 import { User } from './User';
 
+@modelOptions({ options: { allowMixed: Severity.ERROR } })
 export class Playlist {
     
     @prop({ required: true })
     public name: string;
 
-    @prop({ required: true })
+    @prop({ required: true, ref: "User" })
     public owner: Ref<User>;
 
-    @prop()
-    public songs: Ref<PlaylistSong>[];
+    @prop({ type: () => PlaylistSong })
+    public songs: PlaylistSong[];
 
     @prop({ default: () => "CURRENT_TIMESTAMP" })
     public created_at: Date;

@@ -1,5 +1,8 @@
 import axios from 'axios';
 import { APISong } from 'src/@types/APISong';
+import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration';
+dayjs.extend(duration);
 
 export const GetDataFromYouTube = (id: string): Promise<APISong> => {
 
@@ -8,11 +11,12 @@ export const GetDataFromYouTube = (id: string): Promise<APISong> => {
         const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${id}&key=${process.env.YOUTUBE_KEY}`;
         try {
             const { data } = await axios.get(url);
-    
+            
             resolve({
                 title: data.items[0].snippet.title,
-                postedBy: data.items[0].snippet.channelTitle,
-                thumbnailURL: data.items[0].snippet.thumbnails.high.url
+                artist: data.items[0].snippet.channelTitle,
+                artwork: data.items[0].snippet.thumbnails.high.url,
+                duration: dayjs.duration(data.items[0].contentDetails.duration).asSeconds()
             });
         } catch {
             reject();
