@@ -1,10 +1,11 @@
 import axios from 'axios';
-import { APISong } from 'src/@types/APISong';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
+import { SongSearchResult } from 'src/types/SongSearchResult';
+import { SongResult } from 'src/types/SongResult';
 dayjs.extend(duration);
 
-export const GetDataFromYouTube = (id: string): Promise<APISong> => {
+export const GetDataFromYouTube = (id: string): Promise<SongResult> => {
 
     return new Promise(async(resolve, reject) => {
 
@@ -26,7 +27,7 @@ export const GetDataFromYouTube = (id: string): Promise<APISong> => {
 }
 
 
-export const SearchYouTube = (query: string): Promise<APISong[]> => {
+export const SearchYouTube = (query: string): Promise<SongSearchResult[]> => {
 
     return new Promise(async(resolve, reject) => {
 
@@ -38,10 +39,10 @@ export const SearchYouTube = (query: string): Promise<APISong[]> => {
                 data.items.map((song: any) => ({
                     id: song.id.videoId,
                     title: song.snippet.title,
-                    postedBy: song.snippet.channelTitle,
+                    artist: song.snippet.channelTitle,
                     platform: "YouTube",
-                    thumbnailUrl: song.snippet.thumbnails.high.url,
-                    platformId: song.id.videoId,
+                    artwork: song.snippet.thumbnails.high.url,
+                    platform_id: song.id.videoId,
                 }))
             );
         } catch {

@@ -1,7 +1,7 @@
 import { hash } from "bcrypt";
 import { Request, Response } from "express";
 import passport from "passport";
-import { UserModel } from "../models/User";
+import { User, UserModel } from "../models/User";
 
 export const SignUp = async (req: Request, res: Response) => {
 
@@ -30,14 +30,14 @@ export const SignUp = async (req: Request, res: Response) => {
 };
 
 // The function that sends the ok login response from however they've logged in!
-const OnSignIn = (user: any, _: Request, res: Response) => {
+const OnSignIn = (user: User, _: Request, res: Response) => {
 
     return res.send({
         ok: true,
         user: {
-            id: user.id,
+            id: (user as any).id,
             username: user.username,
-            createdAt: user.createdAt
+            created_at: user.created_at
         }
     })
 

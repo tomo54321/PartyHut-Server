@@ -1,10 +1,10 @@
 import axios from 'axios';
-import { APISong } from 'src/@types/APISong';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
+import { SongResult } from 'src/types/SongResult';
 dayjs.extend(duration);
 
-export const GetDataFromSoundCloud = (id: string): Promise<APISong> => {
+export const GetDataFromSoundCloud = (id: string): Promise<SongResult> => {
 
     return new Promise(async(resolve, reject) => {
 
