@@ -1,8 +1,5 @@
 import axios from 'axios';
-import dayjs from 'dayjs';
-import duration from 'dayjs/plugin/duration';
 import { SongResult } from 'src/@types/SongResult';
-dayjs.extend(duration);
 
 export const GetDataFromSoundCloud = (id: string): Promise<SongResult> => {
 
@@ -16,10 +13,10 @@ export const GetDataFromSoundCloud = (id: string): Promise<SongResult> => {
                 title: data.title,
                 artist: data.user.username,
                 artwork: data.artwork_url,
-                duration: dayjs.duration(data.items[0].contentDetails.duration).asSeconds()
+                duration: data.duration / 1000
             });
-        } catch {
-            reject();
+        } catch (e) {
+            reject(e);
         }
     });
 

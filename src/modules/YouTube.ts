@@ -9,18 +9,17 @@ export const GetDataFromYouTube = (id: string): Promise<SongResult> => {
 
     return new Promise(async(resolve, reject) => {
 
-        const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${id}&key=${process.env.YOUTUBE_KEY}`;
+        const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${id}&key=${process.env.YOUTUBE_KEY}`;
         try {
             const { data } = await axios.get(url);
-            
             resolve({
                 title: data.items[0].snippet.title,
                 artist: data.items[0].snippet.channelTitle,
                 artwork: data.items[0].snippet.thumbnails.high.url,
                 duration: dayjs.duration(data.items[0].contentDetails.duration).asSeconds()
             });
-        } catch {
-            reject();
+        } catch (e) {
+            reject(e);
         }
     });
 

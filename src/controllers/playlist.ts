@@ -1,4 +1,5 @@
 import { Response, Request } from "express";
+import { isValidObjectId } from "mongoose";
 import { PlaylistModel } from "../models/Playlist";
 import { GetDataFromSoundCloud } from "../modules/SoundCloud";
 import { GetDataFromYouTube } from "../modules/YouTube";
@@ -15,11 +16,12 @@ export const ListPlaylists = async (req: Request, res: Response) => {
             playlists: playlists.map(playlist => ({
                 id: playlist.id,
                 name: playlist.name,
-                artwork: playlist.songs[0].artwork,
-                totalSongs: playlist.songs.length
+                artwork: playlist.songs[0]?.artwork || "http://placehold.it/250x250",
+                total_songs: playlist.songs.length
             }))
         })
     } catch (e) {
+        console.log(e);
         return res.status(500).send({
             errors: [{
                 param: "server",
@@ -32,11 +34,20 @@ export const ListPlaylists = async (req: Request, res: Response) => {
 
 export const GetPlaylist = async (req: Request, res: Response) => {
 
+    if(!isValidObjectId(req.params.playlistId)){
+        return res.status(404).send({
+            errors: [{
+                param: "playlistId",
+                msg: "Playlist not found."
+            }]
+        })
+    }
+
     try {
         const playlist = await PlaylistModel.findOne({
             _id: req.params.playlistId,
             owner: req.user!
-        });
+        }).populate("owner");
         if (!playlist) {
             return res.status(404).send({
                 errors: [{
@@ -51,21 +62,24 @@ export const GetPlaylist = async (req: Request, res: Response) => {
             playlist: {
                 id: playlist.id,
                 name: playlist.name,
+                artwork: playlist.songs[0]?.artwork || "http://placehold.it/250x250",
+                total_songs: playlist.songs.length,
                 user: {
                     id: (playlist.owner! as any)._id,
                     username: (playlist.owner! as any).username
                 },
                 songs: playlist.songs.map(song => ({
+                    id: (song as any).id,
                     title: song.title,
                     artist: song.artist,
                     artwork: song.artwork,
+                    duration: song.duration,
                     platform: song.platform,
-                    platformId: song.platform_id
+                    platform_id: song.platform_id
                 }))
             }
         })
     } catch (e) {
-        console.error(e);
         return res.status(500).send({
             errors: [{
                 param: "server",
@@ -80,7 +94,7 @@ export const CreatePlaylist = async (req: Request, res: Response) => {
 
     try {
         const playlist = await PlaylistModel.create({
-            title: req.body.title,
+            name: req.body.name,
             owner: req.user!
         });
 
@@ -105,12 +119,19 @@ export const CreatePlaylist = async (req: Request, res: Response) => {
 
 export const UpdatePlaylist = async (req: Request, res: Response) => {
 
+    if(!isValidObjectId(req.params.playlistId)){
+        return res.status(404).send({
+            errors: [{
+                param: "playlistId",
+                msg: "Playlist not found."
+            }]
+        })
+    }
+
     try {
         const playlist = await PlaylistModel.findOne({
-            where: {
-                id: req.params.playlistId,
-                owner: req.user!
-            }
+            _id: req.params.playlistId,
+            owner: req.user!
         });
         if (!playlist) {
             return res.status(404).send({
@@ -184,7 +205,7 @@ export const AddSongToPlaylist = async (req: Request, res: Response) => {
 
     try {
         const playlist = await PlaylistModel.findOne({
-            id: req.params.playlistId,
+            _id: req.params.playlistId,
             owner: req.user!
         });
         if (!playlist) {
@@ -196,7 +217,6 @@ export const AddSongToPlaylist = async (req: Request, res: Response) => {
             })
         }
 
-        const songs = playlist.songs;
         let songData = null;
         if (req.body.platform === "SoundCloud") {
             songData = await GetDataFromSoundCloud(req.body.songId);
@@ -204,22 +224,27 @@ export const AddSongToPlaylist = async (req: Request, res: Response) => {
             songData = await GetDataFromYouTube(req.body.songId);
         }
 
-        playlist.songs.push({
-            title: songData.title,
-            artist: songData.artist,
-            platform: req.body.platform,
-            platform_id: req.body.songId,
-            artwork: songData.artwork,
-            duration: songData.duration
+        await PlaylistModel.updateOne({
+            _id: req.params.playlistId,
+            owner: req.user!
+        }, {
+            $push: {
+                songs:{
+                    title: songData.title,
+                    artist: songData.artist,
+                    platform: req.body.platform,
+                    platform_id: req.body.songId,
+                    artwork: songData.artwork,
+                    duration: songData.duration
+                } 
+            }
         })
 
         return res.send({
-            ok: true,
-            playlist: {
-                songs
-            }
+            ok: true
         })
     } catch (e) {
+        console.log(e);
         return res.status(500).send({
             errors: [{
                 param: "server",
@@ -234,9 +259,8 @@ export const RemoveSongFromPlaylist = async (req: Request, res: Response) => {
 
     try {
         const playlist = await PlaylistModel.findOne({
-            id: req.params.playlistId,
+            _id: req.params.playlistId,
             owner: req.user!
-
         });
         if (!playlist) {
             return res.status(404).send({
@@ -248,7 +272,7 @@ export const RemoveSongFromPlaylist = async (req: Request, res: Response) => {
         }
 
         const songs = playlist.songs;
-        const songIndex = songs.findIndex(song => song.platform_id === req.params.songId);
+        const songIndex = songs.findIndex(song => (song as any).id === req.params.songId);
         if (songIndex < 0) {
             return res.status(404).send({
                 errors: [{
