@@ -1,8 +1,8 @@
 import axios from 'axios';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
-import { SongSearchResult } from 'src/types/SongSearchResult';
-import { SongResult } from 'src/types/SongResult';
+import { SongSearchResult } from 'src/@types/SongSearchResult';
+import { SongResult } from 'src/@types/SongResult';
 dayjs.extend(duration);
 
 export const GetDataFromYouTube = (id: string): Promise<SongResult> => {

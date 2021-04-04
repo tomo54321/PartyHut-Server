@@ -1,7 +1,7 @@
 import axios from 'axios';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
-import { SongResult } from 'src/types/SongResult';
+import { SongResult } from 'src/@types/SongResult';
 dayjs.extend(duration);
 
 export const GetDataFromSoundCloud = (id: string): Promise<SongResult> => {

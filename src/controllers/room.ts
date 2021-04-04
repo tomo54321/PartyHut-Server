@@ -32,7 +32,7 @@ export const CreateRoom = async (req: Request, res: Response) => {
 
     try {
 
-        const user_rooms_count = await RoomModel.count({
+        const user_rooms_count = await RoomModel.countDocuments({
             owner: req.user!
         });
         if (user_rooms_count > 0) {
@@ -46,7 +46,10 @@ export const CreateRoom = async (req: Request, res: Response) => {
 
         const room = await RoomModel.create({
             name: req.body.name,
-            owner: req.user!
+            owner: req.user!,
+            on_deck: {
+                playing: false
+            }
         });
 
         return res.send({
@@ -57,6 +60,7 @@ export const CreateRoom = async (req: Request, res: Response) => {
             }
         })
     } catch (e) {
+        console.log(e);
         return res.status(500).send({
             errors: [{
                 param: "server",

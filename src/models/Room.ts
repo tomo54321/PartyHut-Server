@@ -4,7 +4,7 @@ import { PlaylistSong } from "./PlaylistSong";
 import { User } from "./User";
 
 class RoomOnDeck {
-    
+
     @prop({ required: true, default: false })
     public playing: boolean;
 
@@ -26,12 +26,25 @@ class DjQueue {
     @prop({ ref: "User", required: true })
     public user: User;
 
-    @prop({ ref: "Playlist", required: true})
+    @prop({ ref: "Playlist", required: true })
     public playlist: Playlist;
 
 }
 
-@modelOptions({ options: { allowMixed: Severity.ERROR } })
+@modelOptions({
+    options: {
+        allowMixed: Severity.ERROR
+    },
+    schemaOptions: {
+        toJSON: {
+            transform(_, ret){
+                ret.id = ret._id;
+                delete ret._id;
+                delete ret.__v;
+            }
+        }
+    }
+})
 export class Room {
 
     @prop({ required: true })
@@ -39,6 +52,9 @@ export class Room {
 
     @prop({ required: true, ref: "User" })
     public owner: Ref<User>;
+
+    @prop({ default: [], type: () => [String] })
+    public genres: string[];
 
     @prop({ required: true, type: () => RoomOnDeck })
     public on_deck: RoomOnDeck;
@@ -51,6 +67,7 @@ export class Room {
 
     @prop({ default: Date.now() })
     public updated_at: Date;
+
 
 }
 

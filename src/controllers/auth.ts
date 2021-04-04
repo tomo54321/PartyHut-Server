@@ -1,6 +1,7 @@
 import { hash } from "bcrypt";
 import { Request, Response } from "express";
 import passport from "passport";
+import { RoomModel } from "../models/Room";
 import { User, UserModel } from "../models/User";
 
 export const SignUp = async (req: Request, res: Response) => {
@@ -31,7 +32,11 @@ export const SignUp = async (req: Request, res: Response) => {
 };
 
 // The function that sends the ok login response from however they've logged in!
-const OnSignIn = (user: User, _: Request, res: Response) => {
+const OnSignIn = async (user: User, _: Request, res: Response) => {
+
+    const rooms = await RoomModel.find({
+        owner: user
+    }).limit(10).exec();
 
     return res.send({
         ok: true,
@@ -39,7 +44,10 @@ const OnSignIn = (user: User, _: Request, res: Response) => {
             id: (user as any).id,
             username: user.username,
             avatar: user.avatar,
-            huts: [],
+            huts: rooms.map((room) => ({
+                id: room._id,
+                name: room.name
+            })),
             created_at: user.created_at
         }
     })
@@ -83,4 +91,25 @@ export const LocalSignIn = (req: Request, res: Response) => {
         });
     })(req, res);
 
+};
+
+export const GetUser = async (req: Request, res: Response) => {
+    const user = req.user! as User;
+    const rooms = await RoomModel.find({
+        owner: user
+    }).limit(10).exec();
+
+    return res.send({
+        ok: true,
+        user: {
+            id: (user as any).id,
+            username: user.username,
+            avatar: user.avatar,
+            huts: rooms.map((room) => ({
+                id: room._id,
+                name: room.name
+            })),
+            created_at: user.created_at
+        }
+    })
 };

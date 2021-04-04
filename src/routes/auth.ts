@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import { body } from 'express-validator';
 import { ValidateErrors } from '../middleware/validateErrors';
-import { LocalSignIn, SignUp } from '../controllers/auth';
+import { GetUser, LocalSignIn, SignUp } from '../controllers/auth';
 import { UserModel } from '../models/User';
 import { isGuest } from '../middleware/isGuest';
+import { isAuth } from '../middleware/isAuth';
 export const AuthRouter = Router();
 
 AuthRouter.post(
@@ -91,3 +92,5 @@ AuthRouter.post(
     ValidateErrors,
     LocalSignIn
 );
+
+AuthRouter.get("/me", isAuth, GetUser);

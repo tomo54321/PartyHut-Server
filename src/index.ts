@@ -8,8 +8,8 @@ import { PlaylistRouter } from './routes/playlist';
 import { ExternalRouter } from './routes/external';
 import { RoomRouter } from './routes/room';
 import { SessionMiddleware } from './middleware/session';
-import { mongoose } from '@typegoose/typegoose';
 
+import { mongoose } from '@typegoose/typegoose';
 
 (async () => {
 
@@ -35,20 +35,6 @@ import { mongoose } from '@typegoose/typegoose';
 
     // Load available authentication strategies
     InitStrategies();
-
-
-    app.get("/app", (req, res) => {
-        return res.send({
-            ok: true,
-            user: req.user ? {
-                id: (req.user as any).id,
-                username: (req.user as any).username,
-                avatar: (req.user as any).avatar,
-                huts: [],
-                created_at: (req.user as any).created_at,
-            } : null
-        })
-    });
 
     app.use("/auth", AuthRouter);
     app.use("/playlist", PlaylistRouter);
