@@ -11,13 +11,9 @@ export const InitStrategies = () => {
 
     passport.deserializeUser(async (id, done) => {
         try{
-            const user = await UserModel.findOne({
-                where: {
-                    id: id
-                }
-            });
+            const user = await UserModel.findOne({ _id: id });
             if(!user){
-                return done(new Error("User not found"));
+                return done("User not found");
             }
             return done(null, user);
         } catch (e) {

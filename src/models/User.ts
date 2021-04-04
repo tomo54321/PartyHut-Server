@@ -7,6 +7,9 @@ export class User {
     @prop({ unique: true })
     public email: string;
 
+    @prop({ default: "http://placehold.it/75x75" })
+    public avatar: string;
+
     @prop()
     public password: string;
 

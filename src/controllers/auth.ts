@@ -38,6 +38,8 @@ const OnSignIn = (user: User, _: Request, res: Response) => {
         user: {
             id: (user as any).id,
             username: user.username,
+            avatar: user.avatar,
+            huts: [],
             created_at: user.created_at
         }
     })

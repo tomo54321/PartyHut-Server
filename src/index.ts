@@ -43,7 +43,9 @@ import { mongoose } from '@typegoose/typegoose';
             user: req.user ? {
                 id: (req.user as any).id,
                 username: (req.user as any).username,
-                createdAt: (req.user as any).createdAt,
+                avatar: (req.user as any).avatar,
+                huts: [],
+                created_at: (req.user as any).created_at,
             } : null
         })
     });
