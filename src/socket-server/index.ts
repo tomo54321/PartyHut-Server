@@ -58,7 +58,7 @@ export let socketServer: Server<DefaultEventsMap, DefaultEventsMap>;
             if(!wasFound){
 
                 // Join a private room of the sockets profile id.
-                socket.join(socket.data.profile._id);
+                socket.join(socket.data.profile._id.toString());
 
                 next();
             } else {

@@ -222,7 +222,6 @@ const onSocketLeaveRoom = async (
         socket.to((room as any).id).emit("user leave", {
             id: socket.data.profile.id
         });
-
         // If the user was in the queue
         if (isInQueue) {
             // Remove them from it.
@@ -265,7 +264,10 @@ const onSocketSkipSong = async (
     room: Room
 ) => {
 
-    const playlist = room.on_deck.playlist!;
+    const playlist = await PlaylistModel.findOne({ _id: room.on_deck.playlist });
+    if(!playlist){ // They've removed their playlist.
+        return switchToNextDJ(room);
+    }
     if (room.on_deck.current_song_index === (playlist.songs.length - 1)) {
         console.log("Going to next DJ");
         return switchToNextDJ(room);
@@ -289,14 +291,14 @@ const isSocketInDJQueue = (
     room: Room,
     user: User
 ) => {
-    return room.dj_queue.findIndex(dj => dj.user === user) > -1
+    return room.dj_queue.findIndex(dj => dj.user._id.toString() === user._id.toString()) > -1
 }
 
 const isSocketDJ = (
     room: Room,
     user: User
 ) => {
-    return room.on_deck.dj !== null && room.on_deck.dj === user;
+    return room.on_deck.dj && room.on_deck.dj._id.toString() === user._id.toString();
 }
 
 const switchToNextDJ = async (
@@ -316,11 +318,11 @@ const switchToNextDJ = async (
     room.dj_queue.splice(0, 1);
     await (room as any).save();
 
-    if (room.dj_queue) {
-        socketServer.to((room.on_deck.dj! as any)._id).emit("no longer dj"); // Tell old DJ they're not IT anymore 
+    if (room.on_deck.dj) {
+        socketServer.to((room.on_deck.dj as any)._id.toString()).emit("no longer dj"); // Tell old DJ they're not IT anymore 
     }
     if (nextDj) {
-        socketServer.to(nextDj.id).emit("became dj"); // Tell new DJ they're IT!
+        socketServer.to(nextDj._id.toString()).emit("became dj"); // Tell new DJ they're IT!
     }
 
     // TODO: Implement preventing of deleting of playlists when in a queue!
@@ -405,6 +407,12 @@ const updateRoomDeckState = (
         if (deckState.playlist !== undefined) {
             room.on_deck.playlist = deckState.playlist;
         }
+
+        if(!room.on_deck.playing){
+            room.on_deck.dj = undefined;
+            room.on_deck.playlist = undefined;
+        }
+        
         await (room as any).save();
 
         // Alert all users in the room of the new change.
@@ -412,7 +420,7 @@ const updateRoomDeckState = (
             playing: deckState.playing,
             song: deckState.song,
             song_start_time: room.on_deck.current_song_start_at.getTime(),
-            current_dj: room.on_deck.dj?._id || null
+            current_dj: room.on_deck.dj || null
         });
 
         resolve(true);
