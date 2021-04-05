@@ -4,7 +4,10 @@ import { User } from './User';
 
 @modelOptions({ options: { allowMixed: Severity.ERROR } })
 export class Playlist {
-    
+
+    public _id: any;
+    public id: any;
+
     @prop({ required: true })
     public name: string;
 

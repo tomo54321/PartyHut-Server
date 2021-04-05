@@ -49,7 +49,7 @@ export let socketServer: Server<DefaultEventsMap, DefaultEventsMap>;
         let wasFound = false;
         try{
             allSockets.forEach(client => {
-                if(client.data.profile.id === socket.data.profile.id){
+                if(client.data.profile._id === socket.data.profile._id){
                     wasFound = true;
                     throw BreakException;
                 }
@@ -58,7 +58,7 @@ export let socketServer: Server<DefaultEventsMap, DefaultEventsMap>;
             if(!wasFound){
 
                 // Join a private room of the sockets profile id.
-                socket.join(socket.data.profile.id);
+                socket.join(socket.data.profile._id);
 
                 next();
             } else {

@@ -18,6 +18,9 @@ class RoomOnDeck {
     public playlist?: Playlist;
 
     @prop({ default: 0 })
+    public current_song_start_at: Date;
+
+    @prop({ default: 0 })
     public current_song_index: number;
 }
 
@@ -46,6 +49,9 @@ class DjQueue {
     }
 })
 export class Room {
+
+    public _id: any;
+    public id: any;
 
     @prop({ required: true })
     public name: string;

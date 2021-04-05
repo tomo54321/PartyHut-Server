@@ -1,12 +1,13 @@
 import { Socket } from "socket.io";
 import { DefaultEventsMap } from "socket.io/dist/typed-events";
-import { Playlist } from "../../database/entity/Playlist";
-import { Room } from "../../database/entity/Room";
-import { User } from "../../database/entity/User";
+import { Playlist, PlaylistModel } from "../../models/Playlist";
+import { Room, RoomModel } from "../../models/Room";
+import { User, UserModel } from "../../models/User";
 import { socketServer } from "..";
 import { DeckState } from "../@types/DeckState";
 import { sendCriticalError } from "../utils/send-critical-error";
 import { sendError } from "../utils/send-error";
+import { isValidObjectId } from "mongoose";
 
 export const roomHandlers = (socket: Socket<DefaultEventsMap, DefaultEventsMap>) => {
 
@@ -14,10 +15,16 @@ export const roomHandlers = (socket: Socket<DefaultEventsMap, DefaultEventsMap>)
      * Socket join room event
      */
     socket.on("join room", async ({ id }: { id: string }) => {
+        if(!isValidObjectId(id)){
+            sendCriticalError(socket, "Room doesn't exist.", "roomId");
+            return socket.disconnect();
+        }
+
         try {
-            const room = await Room.findOne(id);
+            const room = await RoomModel.findOne({ _id: id })
+                .populate("owner").exec();
             if (!room) {
-                sendCriticalError(socket, "Room doesn't exist.", "server");
+                sendCriticalError(socket, "Room doesn't exist.", "roomId");
                 return socket.disconnect();
             }
             return await onSocketJoinRoom(socket, room);
@@ -34,20 +41,23 @@ export const roomHandlers = (socket: Socket<DefaultEventsMap, DefaultEventsMap>)
      */
     socket.on("join queue", async ({ playlistId }: { playlistId: string }) => {
 
+        if(!isValidObjectId(playlistId)){
+            sendError(socket, "Invalid playlist.", "playlistId");
+            return socket.disconnect();
+        }
+
         try {
             // Fetch the current room.
-            const room = await Room.findOne(socket.data.currentRoom);
+            const room = await RoomModel.findOne({_id: socket.data.currentRoom});
             if (!room) {
                 return handleRoomDoesntExist(socket.data.currentRoom);
             }
             // Fetch the current user
             const user: User = socket.data.profile;
             // Fetch the playlist to join with.
-            const playlist = await Playlist.findOne({
-                where: {
-                    id: playlistId,
-                    owner: user
-                }
+            const playlist = await PlaylistModel.findOne({
+                _id: playlistId,
+                owner: user
             });
             if (!playlist) {
                 return sendError(socket, "That playlist couldn't be found");
@@ -74,17 +84,17 @@ export const roomHandlers = (socket: Socket<DefaultEventsMap, DefaultEventsMap>)
         console.log("NEXT SONG!");
         try {
             // Fetch the current room.
-            const room = await Room.findOne(socket.data.currentRoom);
+            const room = await RoomModel.findOne({_id: socket.data.currentRoom});
             if (!room) {
                 console.log("ROOM NEIN FOUND!");
                 return handleRoomDoesntExist(socket.data.currentRoom);
             }
             const user = socket.data.profile;
 
-            if (isSocketDJ(room, user) && room.is_playing) {
+            if (isSocketDJ(room, user) && room.on_deck.playing) {
 
                 // Song has been going longer than 10 seconds?
-                if (room.current_song_started_at!.getTime() < (Date.now() - 10000)) {
+                if (room.on_deck.current_song_start_at!.getTime() < (Date.now() - 10000)) {
                     return onSocketSkipSong(room);
                 } else {
                     return sendError(socket, "Hold up! You need to wait before skipping this song.");
@@ -119,6 +129,7 @@ export const roomHandlers = (socket: Socket<DefaultEventsMap, DefaultEventsMap>)
         socket.to(socket.data.currentRoom).emit("receive chat message", {
             id: Math.round(Math.random() * 9999) + Date.now(),
             username: socket.data.profile.username,
+            created_at: new Date(),
             message
         });
 
@@ -142,36 +153,35 @@ const onSocketJoinRoom = async (
 ) => {
 
     // Set the sockets room to this one
-    socket.data.currentRoom = room.id;
+    socket.data.currentRoom = (room as any).id;
 
     // Join the room in socket.io
-    socket.join(room.id);
+    socket.join((room as any).id);
 
     // Let other users know someone joined!
-    socket.to(room.id).emit("user join", {
+    socket.to((room as any).id).emit("user join", {
         id: socket.data.profile.id,
         username: socket.data.profile.username
     });
 
     // Fetch the rooms owner
-    const owner = await room.owner;
+    const owner = room.owner;
 
     // Send the joined response to the user
     socket.emit("joined room", {
-        id: room.id,
+        id: (room as any).id,
         name: room.name,
-        host: {
-            id: owner.id,
-            username: owner.username
+        owner: {
+            id: (owner! as any)._id,
+            username: (owner! as User).username
         },
-        users: getUsersInRoom(room.id),
+        users: getUsersInRoom((room as any).id),
         on_deck: {
-            playing: room.is_playing,
-            platform: room.current_playing_platform,
-            platformId: room.current_playing_platform_id,
-            songStartedAt: room.current_song_started_at,
+            playing: room.on_deck.playing,
+            song: room.on_deck.song || null,
+            song_start_time: room.on_deck.current_song_start_at,
 
-            current_dj: room.current_dj?.id || null
+            current_dj: room.on_deck.dj || null
         },
         is_dj: isSocketDJ(room, socket.data.profile),
         in_queue: isSocketInDJQueue(room, socket.data.profile)
@@ -192,7 +202,7 @@ const onSocketLeaveRoom = async (
     const roomId = socket.data.currentRoom;
     try {
         // Find the current room
-        const room = await Room.findOne(roomId);
+        const room = await RoomModel.findOne({_id: roomId});
         // Room no longer exists?
         if (!room) {
             // Disconnect everyone in the non-existing room.
@@ -209,7 +219,7 @@ const onSocketLeaveRoom = async (
         const isDJ = isSocketDJ(room, user);
 
         // Let other users know someone left!
-        socket.to(room.id).emit("user leave", {
+        socket.to((room as any).id).emit("user leave", {
             id: socket.data.profile.id
         });
 
@@ -234,20 +244,20 @@ const onSocketJoinDJQueue = async (
     playlist: Playlist
 ) => {
 
-    room.current_dj_queue.push({
-        userId: user.id,
-        playlistId: playlist.id
+    room.dj_queue.push({
+        user: user,
+        playlist: playlist
     });
 
     // If this is the only user in the queue.
-    if (room.is_playing === false) {
+    if (room.on_deck.playing === false) {
         return switchToNextDJ(room);
     }
 
     // Otherwise add to the queue.
-    await room.save();
+    await (room as any).save();
 
-    return socketServer.to(user.id).emit("joined queue");
+    return socketServer.to((user as any)._id).emit("joined queue");
 
 };
 
@@ -255,21 +265,20 @@ const onSocketSkipSong = async (
     room: Room
 ) => {
 
-    const playlist = room.current_playlist!;
-    if (room.current_song_index === (playlist.songs.length - 1)) {
+    const playlist = room.on_deck.playlist!;
+    if (room.on_deck.current_song_index === (playlist.songs.length - 1)) {
         console.log("Going to next DJ");
         return switchToNextDJ(room);
     }
 
-    const newSongIndex = room.current_song_index! + 1;
+    const newSongIndex = room.on_deck.current_song_index! + 1;
     const nextSong = playlist.songs[newSongIndex];
 
     await updateRoomDeckState(room, {
         playing: true,
-        platform: nextSong.platform,
-        platformId: nextSong.platformId,
+        song: nextSong,
         currentSongIndex: newSongIndex,
-        songStartedAt: new Date()
+        song_start_time: new Date()
     });
 
 };
@@ -280,14 +289,14 @@ const isSocketInDJQueue = (
     room: Room,
     user: User
 ) => {
-    return room.current_dj_queue.findIndex(dj => dj.userId === user.id) > -1
+    return room.dj_queue.findIndex(dj => dj.user === user) > -1
 }
 
 const isSocketDJ = (
     room: Room,
     user: User
 ) => {
-    return room.current_dj !== null && room.current_dj.id === user.id;
+    return room.on_deck.dj !== null && room.on_deck.dj === user;
 }
 
 const switchToNextDJ = async (
@@ -295,20 +304,20 @@ const switchToNextDJ = async (
 ) => {
 
     // No one is in the queue?
-    if (room.current_dj_queue.length === 0) {
+    if (room.dj_queue.length === 0) {
         // Remove the current dj from the decks.
         return await clearTheDecks(room);
     }
 
-    const nextDj = await User.findOne(room.current_dj_queue[0].userId);
-    const nextPlaylist = await Playlist.findOne(room.current_dj_queue[0].playlistId);
+    const nextDj = await UserModel.findOne({_id: room.dj_queue[0].user});
+    const nextPlaylist = await PlaylistModel.findOne({ _id: room.dj_queue[0].playlist});
     const newSong = nextPlaylist!.songs[0];
 
-    room.current_dj_queue.splice(0, 1);
-    await room.save();
+    room.dj_queue.splice(0, 1);
+    await (room as any).save();
 
-    if (room.current_dj) {
-        socketServer.to(room.current_dj.id).emit("no longer dj"); // Tell old DJ they're not IT anymore 
+    if (room.dj_queue) {
+        socketServer.to((room.on_deck.dj! as any)._id).emit("no longer dj"); // Tell old DJ they're not IT anymore 
     }
     if (nextDj) {
         socketServer.to(nextDj.id).emit("became dj"); // Tell new DJ they're IT!
@@ -318,13 +327,12 @@ const switchToNextDJ = async (
 
     await updateRoomDeckState(room, {
         playing: true,
-        platform: newSong.platform,
-        platformId: newSong.platformId,
+        song: newSong,
         currentSongIndex: 0,
-        songStartedAt: new Date(),
+        song_start_time: new Date(),
 
-        current_dj: nextDj,
-        playlist: nextPlaylist
+        current_dj: nextDj || undefined,
+        playlist: nextPlaylist || undefined
     });
 
 };
@@ -333,22 +341,21 @@ const clearTheDecks = async (
     room: Room
 ) => {
 
-    if (!room.is_playing) { return; }
+    if (!room.on_deck.playing) { return; }
 
     try {
 
         // Send a message to the current dj saying they're not the dj anymore
-        socketServer.to(room.current_dj!.id).emit("no longer dj");
+        socketServer.to((room.on_deck.dj! as any)._id).emit("no longer dj");
 
         // Update the room
         await updateRoomDeckState(room, {
             playing: false,
-            platform: null,
-            platformId: null,
-            songStartedAt: null,
+            song: undefined,
+            song_start_time: null,
             currentSongIndex: 0,
-            current_dj: null,
-            playlist: null
+            current_dj: undefined,
+            playlist: undefined
         });
 
 
@@ -363,11 +370,11 @@ const removeUserFromQueue = async (
     room: Room
 ) => {
 
-    const queue = room.current_dj_queue;
-    const userQueueIndex = queue.findIndex(dj => dj.userId === user.id);
+    const queue = room.dj_queue;
+    const userQueueIndex = queue.findIndex(dj => dj.user === user);
     queue.splice(userQueueIndex, 1);
-    room.current_dj_queue = queue;
-    await room.save();
+    room.dj_queue = queue;
+    await (room as any).save();
 
     return true;
 
@@ -387,27 +394,25 @@ const updateRoomDeckState = (
 
     return new Promise(async (resolve) => {
         // Update the room
-        room.is_playing = deckState.playing;
-        room.current_playing_platform = deckState.platform;
-        room.current_playing_platform_id = deckState.platformId;
-        room.current_song_started_at = deckState.songStartedAt;
-        room.current_song_index = deckState.currentSongIndex;
+        room.on_deck.playing = deckState.playing;
+        room.on_deck.song = deckState.song;
+        room.on_deck.current_song_start_at = deckState.song_start_time !== null ? deckState.song_start_time : new Date();
+        room.on_deck.current_song_index = deckState.currentSongIndex;
 
         if (deckState.current_dj !== undefined) {
-            room.current_dj = deckState.current_dj;
+            room.on_deck.dj = deckState.current_dj;
         }
         if (deckState.playlist !== undefined) {
-            room.current_playlist = deckState.playlist;
+            room.on_deck.playlist = deckState.playlist;
         }
-        await room.save();
+        await (room as any).save();
 
         // Alert all users in the room of the new change.
-        socketServer.in(room.id).emit("deck change", {
+        socketServer.in((room as any).id).emit("deck change", {
             playing: deckState.playing,
-            platform: deckState.platform,
-            platformId: deckState.platformId,
-            songStartedAt: room.current_song_started_at?.getTime() || null,
-            current_dj: room.current_dj?.id || null
+            song: deckState.song,
+            song_start_time: room.on_deck.current_song_start_at.getTime(),
+            current_dj: room.on_deck.dj?._id || null
         });
 
         resolve(true);

@@ -41,10 +41,11 @@ import { mongoose } from '@typegoose/typegoose';
     app.use("/room", RoomRouter);
     app.use("/external", ExternalRouter);
 
-    // Start the socket server
-    // require("./socket-server/index");
-
     // Listen
     const PORT = process.env.EXPRESS_PORT || 4000;
     app.listen(PORT, () => console.log(`Express listening on http://localhost:${PORT}`));
+
+    
+    // Start the socket server
+    require("./socket-server/index");
 })();
