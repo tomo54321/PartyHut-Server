@@ -256,7 +256,7 @@ const onSocketJoinDJQueue = async (
     // Otherwise add to the queue.
     await (room as any).save();
 
-    return socketServer.to((user as any)._id).emit("joined queue");
+    return socketServer.to(user.id.toString()).emit("joined queue");
 
 };
 
@@ -319,7 +319,7 @@ const switchToNextDJ = async (
     await (room as any).save();
 
     if (room.on_deck.dj) {
-        socketServer.to((room.on_deck.dj as any)._id.toString()).emit("no longer dj"); // Tell old DJ they're not IT anymore 
+        socketServer.to(room.on_deck.dj._id.toString()).emit("no longer dj"); // Tell old DJ they're not IT anymore 
     }
     if (nextDj) {
         socketServer.to(nextDj._id.toString()).emit("became dj"); // Tell new DJ they're IT!
@@ -333,7 +333,7 @@ const switchToNextDJ = async (
         currentSongIndex: 0,
         song_start_time: new Date(),
 
-        current_dj: nextDj || undefined,
+        current_dj: nextDj?._id.toString() || undefined,
         playlist: nextPlaylist || undefined
     });
 
@@ -348,7 +348,7 @@ const clearTheDecks = async (
     try {
 
         // Send a message to the current dj saying they're not the dj anymore
-        socketServer.to((room.on_deck.dj! as any)._id).emit("no longer dj");
+        socketServer.to(room.on_deck.dj!._id.toString()).emit("no longer dj");
 
         // Update the room
         await updateRoomDeckState(room, {
