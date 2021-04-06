@@ -10,6 +10,7 @@ import { RoomRouter } from './routes/room';
 import { SessionMiddleware } from './middleware/session';
 
 import { mongoose } from '@typegoose/typegoose';
+import { AccountRouter } from './routes/account';
 
 (async () => {
 
@@ -40,6 +41,7 @@ import { mongoose } from '@typegoose/typegoose';
     app.use("/playlist", PlaylistRouter);
     app.use("/room", RoomRouter);
     app.use("/external", ExternalRouter);
+    app.use("/account", AccountRouter);
 
     // Listen
     const PORT = process.env.EXPRESS_PORT || 4000;
