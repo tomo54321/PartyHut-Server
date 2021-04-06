@@ -1,19 +1,38 @@
 import { Response, Request } from "express";
 import { RoomModel } from "../models/Room";
 
-export const GetRooms = async (_: Request, res: Response) => {
+export const GetRooms = async (req: Request, res: Response) => {
 
     try {
 
-        const rooms = await RoomModel.find({})
+        let roomQuery = RoomModel.find({})
             .sort({ 'created_at': - 1 })
-            .limit(20)
-            .exec();
+            .limit(20);
+        
+        if(req.query.category === "search" && req.query.query){
+            roomQuery.where({
+                name: {
+                    $regex: req.query.query,
+                    $options: "i"
+                }
+            })
+        }
+
+        const rooms = await roomQuery.exec();
 
         // Send the layout to the client
         return res.send({
             ok: true,
-            rooms
+            rooms: rooms.map((room) => ({
+                id: room.id,
+                name: room.name,
+                genres: room.genres,
+                playing: room.on_deck.playing,
+                song: {
+                    title: room.on_deck.song?.title,
+                    artwork: room.on_deck.song?.artwork
+                }
+            }))
         })
 
     } catch (e) {
