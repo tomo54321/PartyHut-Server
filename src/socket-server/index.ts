@@ -15,7 +15,7 @@ export let socketServer: Server<DefaultEventsMap, DefaultEventsMap>;
         path: "/",
         serveClient: false,
         cors: {
-            origin: ["http://localhost:3000", "http://192.168.68.134:3000"],
+            origin: ["http://localhost:3000", "http://192.168.68.134:3000", "http://local.partyhut.net:3000"],
         },
         transports: ["websocket"]
     });

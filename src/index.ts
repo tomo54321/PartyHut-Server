@@ -21,7 +21,7 @@ import { mongoose } from '@typegoose/typegoose';
     app.use(passport.initialize());
     app.use(passport.session());
     app.use(cors({
-        origin: ["http://localhost:3000", "http://192.168.68.134:3000"],
+        origin: ["http://localhost:3000", "http://192.168.68.134:3000", "http://local.partyhut.net:3000"],
         credentials: true
     }));
 
