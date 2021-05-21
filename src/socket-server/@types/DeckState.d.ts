@@ -1,12 +1,12 @@
-import { Playlist } from "src/database/entity/Playlist";
-import { User } from "src/database/entity/User";
+import { PlaylistSong } from "src/models/PlaylistSong";
+import { Playlist } from "../../models/Playlist";
+import { User } from "../../models/User";
 
 export interface DeckState {
     playing: boolean;
-    platform: null | "YouTube" | "SoundCloud";
-    platformId: null | string;
+    song?: PlaylistSong;
     currentSongIndex: number;
-    current_dj?: null | User;
-    playlist?: null | Playlist;
-    songStartedAt: null | Date;
+    current_dj?: User;
+    playlist?: Playlist;
+    song_start_time: null | Date;
 }

@@ -1,30 +1,36 @@
 import { Router } from 'express';
 import { body } from 'express-validator';
 import { ValidateErrors } from '../middleware/validateErrors';
-import { GetUser, LocalSignIn, SignUp } from '../controllers/auth';
-import { UserModel } from '../models/User';
-import { isGuest } from '../middleware/isGuest';
 import { isAuth } from '../middleware/isAuth';
-export const AuthRouter = Router();
+import { MyAccount, UpdateAccount } from '../controllers/account';
+import { UserModel } from '../models/User';
+import { compare } from 'bcrypt';
+export const AccountRouter = Router();
 
-AuthRouter.post(
-    "/signup",
-    isGuest,
+AccountRouter.get(
+    "/",
+    isAuth,
+    MyAccount
+);
+
+AccountRouter.put(
+    "/",
+    isAuth,
     body("username")
         .trim()
         .escape()
-        .toLowerCase()
         .isString()
+        .toLowerCase()
         .withMessage("Please enter a valid username")
-        .isLength({min: 4, max: 50})
+        .isLength({ min: 4, max: 50 })
         .withMessage("Usernames must be at least 4 characters long but no longer than 50 characters.")
         .isAlphanumeric()
         .withMessage("Please enter a valid username")
-        .custom((input: string) => {
+        .custom((input: string, { req }) => {
             return new Promise(async (resolve, reject) => {
-                try{
+                try {
                     const user = await UserModel.findOne({ username: input });
-                    if(!user){
+                    if (!user || user.id === req.user.id) {
                         resolve(true);
                     } else {
                         reject(new Error("This username has already been taken."))
@@ -38,19 +44,19 @@ AuthRouter.post(
     body("email")
         .trim()
         .escape()
-        .toLowerCase()
         .isString()
+        .toLowerCase()
         .withMessage("Please enter a valid email address")
         .isEmail()
         .withMessage("Please enter a valid email address")
-        .custom((input: string) => {
+        .custom((input: string, { req }) => {
             return new Promise(async (resolve, reject) => {
-                try{
+                try {
                     const user = await UserModel.findOne({ email: input });
-                    if(!user){
+                    if (!user || req.user.id === user.id) {
                         resolve(true);
                     } else {
-                        reject(new Error("You already have an account."))
+                        reject(new Error("You already have an account with this email address."))
                     }
                 } catch (e) {
                     console.error(e);
@@ -58,42 +64,36 @@ AuthRouter.post(
                 }
             })
         }),
+    ValidateErrors,
+    UpdateAccount
+);
+
+AccountRouter.delete(
+    "/",
+    isAuth,
     body("password")
         .isString()
         .withMessage("Please enter a valid password")
-        .isStrongPassword({ 
-            minLength: 8, 
+        .isStrongPassword({
+            minLength: 8,
             minLowercase: 1,
             minUppercase: 1,
             minNumbers: 1
         })
-        .withMessage("Your password must contain 1 uppercase, 1 lowercase and a number. It must also be at least 8 characters long."),
-    ValidateErrors,
-    SignUp
-);
+        .withMessage("Please enter a valid password.")
+        .custom((input: string, { req }) => {
+            return new Promise(async (resolve, reject) => {
+                try {
+                    const passwordValid = await compare(input, req.user.password);
+                    if(!passwordValid){
+                        reject(new Error("Your password is incorrect."))
+                    }
 
-AuthRouter.post(
-    "/login",
-    isGuest,
-    body("email")
-        .isString()
-        .withMessage("Please enter a valid email address")
-        .isEmail()
-        .withMessage("Please enter a valid email address")
-        .trim()
-        .toLowerCase(),
-    body("password")
-        .isString()
-        .withMessage("Please enter a valid password")
-        .isStrongPassword({ 
-            minLength: 8, 
-            minLowercase: 1,
-            minUppercase: 1,
-            minNumbers: 1
-        })
-        .withMessage("Please enter a valid password."),
-    ValidateErrors,
-    LocalSignIn
-);
-
-AuthRouter.get("/me", isAuth, GetUser);
+                    resolve(true);
+                } catch (e) {
+                    console.error(e);
+                    reject(new Error("Failed to check your password."))
+                }
+            });
+        }),
+)

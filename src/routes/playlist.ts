@@ -13,9 +13,11 @@ PlaylistRouter.get(
 
 PlaylistRouter.post(
     "/",
-    body("title")
+    body("name")
         .isString()
-        .withMessage("Please enter a valid playlist title")
+        .withMessage("Please enter a valid playlist name")
+        .isLength({ min: 2, max: 64})
+        .withMessage("Playlist names have a minimum requirement of 2 and a maximum of 64 characters.")
         .trim()
         .escape(),
     ValidateErrors,
@@ -31,9 +33,11 @@ PlaylistRouter.get(
 
 PlaylistRouter.put(
     "/:playlistId",
-    body("title")
+    body("name")
         .isString()
-        .withMessage("Please enter a valid playlist title")
+        .withMessage("Please enter a valid playlist name")
+        .isLength({ min: 2, max: 64})
+        .withMessage("Playlist names have a minimum requirement of 2 and a maximum of 64 characters.")
         .trim()
         .escape(),
     ValidateErrors,

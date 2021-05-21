@@ -1,7 +1,7 @@
 import axios from 'axios';
-import { APISong } from 'src/@types/APISong';
+import { SongResult } from 'src/@types/SongResult';
 
-export const GetDataFromSoundCloud = (id: string): Promise<APISong> => {
+export const GetDataFromSoundCloud = (id: string): Promise<SongResult> => {
 
     return new Promise(async(resolve, reject) => {
 
@@ -11,11 +11,12 @@ export const GetDataFromSoundCloud = (id: string): Promise<APISong> => {
     
             resolve({
                 title: data.title,
-                postedBy: data.user.username,
-                thumbnailURL: data.artwork_url
+                artist: data.user.username,
+                artwork: data.artwork_url,
+                duration: data.duration / 1000
             });
-        } catch {
-            reject();
+        } catch (e) {
+            reject(e);
         }
     });
 

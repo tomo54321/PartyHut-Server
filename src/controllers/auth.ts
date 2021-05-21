@@ -1,14 +1,15 @@
 import { hash } from "bcrypt";
 import { Request, Response } from "express";
 import passport from "passport";
-import { User } from "../database/entity/User";
+import { RoomModel } from "../models/Room";
+import { User, UserModel } from "../models/User";
 
 export const SignUp = async (req: Request, res: Response) => {
 
     try {
         const password = await hash(req.body.password, 12);
 
-        await User.insert({
+        await UserModel.create({
             username: req.body.username,
             email: req.body.email,
             password
@@ -17,6 +18,7 @@ export const SignUp = async (req: Request, res: Response) => {
         return res.send({ ok: true });
 
     } catch (e) {
+        console.log(e);
         return res.status(500).send({
             errors: [
                 {
@@ -30,14 +32,23 @@ export const SignUp = async (req: Request, res: Response) => {
 };
 
 // The function that sends the ok login response from however they've logged in!
-const OnSignIn = (user: any, _: Request, res: Response) => {
+const OnSignIn = async (user: User, _: Request, res: Response) => {
+
+    const rooms = await RoomModel.find({
+        owner: user
+    }).limit(10).exec();
 
     return res.send({
         ok: true,
         user: {
-            id: user.id,
+            id: (user as any).id,
             username: user.username,
-            createdAt: user.createdAt
+            avatar: user.avatar,
+            huts: rooms.map((room) => ({
+                id: room._id,
+                name: room.name
+            })),
+            created_at: user.created_at
         }
     })
 
@@ -80,4 +91,25 @@ export const LocalSignIn = (req: Request, res: Response) => {
         });
     })(req, res);
 
+};
+
+export const GetUser = async (req: Request, res: Response) => {
+    const user = req.user! as User;
+    const rooms = await RoomModel.find({
+        owner: user
+    }).limit(10).exec();
+
+    return res.send({
+        ok: true,
+        user: {
+            id: (user as any).id,
+            username: user.username,
+            avatar: user.avatar,
+            huts: rooms.map((room) => ({
+                id: room._id,
+                name: room.name
+            })),
+            created_at: user.created_at
+        }
+    })
 };

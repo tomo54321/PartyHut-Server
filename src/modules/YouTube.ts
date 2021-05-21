@@ -1,28 +1,32 @@
 import axios from 'axios';
-import { APISong } from 'src/@types/APISong';
+import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration';
+import { SongSearchResult } from 'src/@types/SongSearchResult';
+import { SongResult } from 'src/@types/SongResult';
+dayjs.extend(duration);
 
-export const GetDataFromYouTube = (id: string): Promise<APISong> => {
+export const GetDataFromYouTube = (id: string): Promise<SongResult> => {
 
     return new Promise(async(resolve, reject) => {
 
-        const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${id}&key=${process.env.YOUTUBE_KEY}`;
+        const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${id}&key=${process.env.YOUTUBE_KEY}`;
         try {
             const { data } = await axios.get(url);
-    
             resolve({
                 title: data.items[0].snippet.title,
-                postedBy: data.items[0].snippet.channelTitle,
-                thumbnailURL: data.items[0].snippet.thumbnails.high.url
+                artist: data.items[0].snippet.channelTitle,
+                artwork: data.items[0].snippet.thumbnails.high.url,
+                duration: dayjs.duration(data.items[0].contentDetails.duration).asSeconds()
             });
-        } catch {
-            reject();
+        } catch (e) {
+            reject(e);
         }
     });
 
 }
 
 
-export const SearchYouTube = (query: string): Promise<APISong[]> => {
+export const SearchYouTube = (query: string): Promise<SongSearchResult[]> => {
 
     return new Promise(async(resolve, reject) => {
 
@@ -34,10 +38,10 @@ export const SearchYouTube = (query: string): Promise<APISong[]> => {
                 data.items.map((song: any) => ({
                     id: song.id.videoId,
                     title: song.snippet.title,
-                    postedBy: song.snippet.channelTitle,
+                    artist: song.snippet.channelTitle,
                     platform: "YouTube",
-                    thumbnailUrl: song.snippet.thumbnails.high.url,
-                    platformId: song.id.videoId,
+                    artwork: song.snippet.thumbnails.high.url,
+                    platform_id: song.id.videoId,
                 }))
             );
         } catch {

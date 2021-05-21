@@ -15,7 +15,7 @@ export let socketServer: Server<DefaultEventsMap, DefaultEventsMap>;
         path: "/",
         serveClient: false,
         cors: {
-            origin: ["http://localhost:3000", "http://192.168.68.134:3000"],
+            origin: ["http://localhost:3000", "http://192.168.68.134:3000", "http://local.partyhut.net:3000"],
         },
         transports: ["websocket"]
     });
@@ -49,7 +49,7 @@ export let socketServer: Server<DefaultEventsMap, DefaultEventsMap>;
         let wasFound = false;
         try{
             allSockets.forEach(client => {
-                if(client.data.profile.id === socket.data.profile.id){
+                if(client.data.profile._id === socket.data.profile._id){
                     wasFound = true;
                     throw BreakException;
                 }
@@ -58,7 +58,7 @@ export let socketServer: Server<DefaultEventsMap, DefaultEventsMap>;
             if(!wasFound){
 
                 // Join a private room of the sockets profile id.
-                socket.join(socket.data.profile.id);
+                socket.join(socket.data.profile._id.toString());
 
                 next();
             } else {

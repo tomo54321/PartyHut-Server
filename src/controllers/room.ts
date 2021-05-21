@@ -1,95 +1,38 @@
 import { Response, Request } from "express";
-import { User } from "../database/entity/User";
-import { Room } from "../database/entity/Room";
-
-interface HomeRoom {
-    id: string;
-    name: string;
-    thumbnail: string;
-    host: {
-        username: string;
-    }
-}
-interface LayoutResponse {
-    title: string;
-    rooms: HomeRoom[];
-}
+import { RoomModel } from "../models/Room";
 
 export const GetRooms = async (req: Request, res: Response) => {
 
-    try{
-        
-        let homeResponse: LayoutResponse[] = [];
+    try {
 
-        // If the user is logged in we'll send those rooms too.
-        if(req.user){
-            const myRooms = await Room.find({
-                where: {
-                    owner: req.user as User
+        let roomQuery = RoomModel.find({})
+            .sort({ 'created_at': - 1 })
+            .limit(20);
+        
+        if(req.query.category === "search" && req.query.query){
+            roomQuery.where({
+                name: {
+                    $regex: req.query.query,
+                    $options: "i"
                 }
-            });
-            if(myRooms.length > 0){
-                homeResponse.push({
-                    title: "My Huts",
-                    rooms: myRooms.map(room => ({
-                        id: room.id,
-                        name: room.name,
-                        thumbnail: getCurrentPlayingThumbnail(room),
-                        host: {
-                            username: (req.user! as User).username
-                        }
-                    }))
-                })
-            }
+            })
         }
 
-        // Find new rooms
-        const newRooms = await Room.find({
-            take: 12,
-            order: {
-                createdAt: "DESC"
-            },
-            relations: ["owner"],
-        });
-        const recentRooms = await Promise.all( newRooms.map(async room => ({
-            id: room.id,
-            name: room.name,
-            thumbnail: getCurrentPlayingThumbnail(room),
-            host: {
-                username: (await room.owner).username
-            }
-        })) );
-        homeResponse.push({
-            title: "New Huts",
-            rooms: recentRooms
-        });
-
-        // Find recently updated rooms
-        const recentlyUpdated = await Room.find({
-            take: 12,
-            order: {
-                updatedAt: "DESC"
-            },
-            relations: ["owner"],
-        });
-        const activeRooms = await Promise.all( recentlyUpdated.map(async room => ({
-            id: room.id,
-            name: room.name,
-            thumbnail: getCurrentPlayingThumbnail(room),
-            host: {
-                username: (await room.owner).username
-            }
-        })) );
-        
-        homeResponse.push({
-            title: "Active Huts",
-            rooms: activeRooms
-        });
+        const rooms = await roomQuery.exec();
 
         // Send the layout to the client
         return res.send({
             ok: true,
-            layout: homeResponse
+            rooms: rooms.map((room) => ({
+                id: room.id,
+                name: room.name,
+                genres: room.genres,
+                playing: room.on_deck.playing,
+                song: {
+                    title: room.on_deck.song?.title,
+                    artwork: room.on_deck.song?.artwork
+                }
+            }))
         })
 
     } catch (e) {
@@ -106,12 +49,12 @@ export const GetRooms = async (req: Request, res: Response) => {
 
 export const CreateRoom = async (req: Request, res: Response) => {
 
-    try{
+    try {
 
-        const user_rooms_count = await Room.count({
+        const user_rooms_count = await RoomModel.countDocuments({
             owner: req.user!
         });
-        if(user_rooms_count > 0){
+        if (user_rooms_count > 0) {
             return res.status(403).send({
                 errors: [{
                     param: "roomLimit",
@@ -120,12 +63,13 @@ export const CreateRoom = async (req: Request, res: Response) => {
             })
         }
 
-        const room = Room.create({
+        const room = await RoomModel.create({
             name: req.body.name,
-            owner: req.user!
+            owner: req.user!,
+            on_deck: {
+                playing: false
+            }
         });
-
-        await room.save();
 
         return res.send({
             ok: true,
@@ -135,6 +79,7 @@ export const CreateRoom = async (req: Request, res: Response) => {
             }
         })
     } catch (e) {
+        console.log(e);
         return res.status(500).send({
             errors: [{
                 param: "server",
@@ -142,21 +87,5 @@ export const CreateRoom = async (req: Request, res: Response) => {
             }]
         })
     }
-    
+
 };
-
-
-const getCurrentPlayingThumbnail = (room: Room): string => {
-    if(!room.is_playing){
-        return "";
-    }
-
-    switch(room.current_playing_platform){
-        case "SoundCloud":
-            return "";
-        case "YouTube":
-            return `https://i.ytimg.com/vi/${room.current_playing_platform_id}/hqdefault.jpg`;
-        default:
-            return"";
-    }
-}
